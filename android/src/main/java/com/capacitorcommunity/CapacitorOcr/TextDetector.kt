@@ -55,11 +55,11 @@ public class TextDetector {
                     call.resolve(JSObject().put("textDetections", JSONArray(detectedText)))
                 }
                 .addOnFailureListener { e ->
-                    call.reject("FirebaseVisionTextRecognizer couldn't process the given image", ex = e)
+                    call.reject("FirebaseVisionTextRecognizer couldn't process the given image", e)
                 }
         } catch (e: Exception) {
             e.printStackTrace()
-            call.reject(e.localizedMessage, ex = e)
+            call.reject(e.localizedMessage, e)
         }
     }
 }

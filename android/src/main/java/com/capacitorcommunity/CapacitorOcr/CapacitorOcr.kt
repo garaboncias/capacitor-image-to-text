@@ -11,7 +11,6 @@ import android.provider.MediaStore
 import android.util.Base64
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
-import com.getcapacitor.PluginException
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import java.io.IOException
@@ -30,14 +29,21 @@ public class CapacitorOcr : Plugin() {
         if (filename != null) {
             @Suppress("DEPRECATION")
             val loaded: Bitmap? = MediaStore.Images.Media.getBitmap(context.contentResolver, Uri.parse(filename))
-            bitmap = loaded ?: throw PluginException("Could not load image from path")
+            bitmap = loaded ?: run {
+                call.reject("Could not load image from path")
+                return
+            }
         } else if (base64 != null) {
             val imageData = Base64.decode(base64.substring(base64.indexOf(",") + 1), Base64.DEFAULT)
 
             val decoded: Bitmap? = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-            bitmap = decoded ?: throw PluginException("Could not load image from base64")
+            bitmap = decoded ?: run {
+                call.reject("Could not load image from base64")
+                return
+            }
         } else {
-            throw PluginException("Invalid image input")
+            call.reject("Invalid image input")
+            return
         }
 
         val matrix = Matrix()

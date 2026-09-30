@@ -12,17 +12,18 @@ public class CapacitorOcr: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "CapacitorOcr"
     public let jsName = "CapacitorOcr"
     public let pluginMethods: [CAPPluginMethod] = [
-        .promise("detectText", CapacitorOcr.detectText)
+        CAPPluginMethod(name: "detectText", returnType: CAPPluginReturnPromise)
     ]
 
     // detectText stays synchronous: it hands the recognition to a background queue, and Vision's perform blocks the
     // thread it runs on, which an async method would take from the cooperative pool.
-    func detectText(_ call: CAPPluginCall) throws {
+    @objc func detectText(_ call: CAPPluginCall) {
         if let filename = call.getString("filename") {
             let filePath = String(filename.dropFirst(7))
 
             guard let image = UIImage(contentsOfFile: filePath) else {
-                throw CAPPluginError("Could not load image from path")
+                call.reject("Could not load image from path")
+                return
             }
 
             TextDetector(call: call, image: image).detectText()
@@ -33,13 +34,14 @@ public class CapacitorOcr: CAPPlugin, CAPBridgedPlugin {
             }
 
             guard let data = Data(base64Encoded: base64), let image = UIImage(data: data) else {
-                throw CAPPluginError("Could not load image from base64")
+                call.reject("Could not load image from base64")
+                return
             }
 
             TextDetector(call: call, image: image).detectText()
 
         } else {
-            throw CAPPluginError("Invalid image input")
+            call.reject("Invalid image input")
         }
     }
 }
@@ -115,7 +117,7 @@ public class TextDetector {
                 "topRight": [Double($0.topRight.x), Double($0.topRight.y)] as [Double],
                 "bottomLeft": [Double($0.bottomLeft.x), Double($0.bottomLeft.y)] as [Double],
                 "bottomRight": [Double($0.bottomRight.x), Double($0.bottomRight.y)] as [Double],
-                "text": $0.topCandidates(1).first?.string as String?
+                "text": $0.topCandidates(1).first?.string ?? ""
             ]}
             self.call.resolve(["textDetections": self.detectedText])
         }
